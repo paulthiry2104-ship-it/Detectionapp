@@ -115,3 +115,9 @@ test('coupe-circuit : un fournisseur en panne ne bloque pas l’analyse', async 
   await assert.rejects(fetchJson('dexscreener', 'https://api.dexscreener.com/y'), /coupe-circuit/);
   assert.equal(calls, before, 'aucun appel réseau supplémentaire');
 });
+
+test('multiplicateur : pas de x100 « parce que c’est petit » (sous tous les comparables)', () => {
+  const r = buildScenarios({ marketCap: 20_000, fdv: null, liquidity: 5_000, circulating: null, total: null, category: 'c', categoryName: 'C', peers: peers(30, 1e6, 1e9), horizon: 'year', selfId: 'x' });
+  assert.equal(r.scenarios.length, 0);
+  assert.ok('reason' in r && /inférieure à tous les comparables/.test(r.reason));
+});

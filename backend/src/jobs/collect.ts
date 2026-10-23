@@ -40,7 +40,7 @@ export async function collectCategories(db: Db, runId: number) {
   const cats = await cg.categories();
   const ts = nowIso();
   const ranked = cats
-    .filter((c) => c.change24h != null && (c.marketCap ?? 0) > 5e6)
+    .filter((c) => c.change24h != null && (c.marketCap ?? 0) >= 50e6) // les micro-catégories ont un momentum trop bruité
     .sort((a, b) => (b.change24h as number) - (a.change24h as number));
   db.tx(() => {
     ranked.forEach((c, i) => {

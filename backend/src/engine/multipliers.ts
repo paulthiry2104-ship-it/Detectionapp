@@ -74,7 +74,8 @@ export function buildScenarios(input: {
   const horizonLabel = { week: '7 jours', month: '30 jours', year: '12 mois' }[input.horizon];
   const jumps = JUMPS[input.horizon];
   const q = (d: number) => Math.min(0.95, pNow + d);
-  if (pNow === 0) warnings.push(`Capitalisation inférieure au plus petit des ${caps.length} comparables suivis : cibles extrapolées, prudence.`);
+  // Plus petit que tous les comparables : aucune base défendable (sinon on fabriquerait des x100 « parce que c'est petit »).
+  if (currentCap < caps[0]) return { scenarios: [], reason: `Capitalisation (${fmt(currentCap)}) inférieure à tous les comparables de « ${input.categoryName ?? category} » : aucun scénario défendable` };
   const defs: { kind: Scenario['kind']; q: number; jump: number; label: string; horizon: string }[] = [
     { kind: 'prudent', q: q(jumps[0]), jump: jumps[0], label: 'Scénario prudent', horizon: horizonLabel },
     { kind: 'haussier', q: q(jumps[1]), jump: jumps[1], label: 'Scénario haussier', horizon: horizonLabel },

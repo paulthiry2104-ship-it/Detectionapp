@@ -143,8 +143,9 @@ function explainMove(cur: RankedRow, prev: { components: any } | undefined) {
 }
 
 /** Calcule et enregistre les classements d'une exécution. */
-export function computeAndStoreRankings(db: Db, runId: number, asOf: Date, opts: { catalystSourceActive: boolean }) {
+export function computeAndStoreRankings(db: Db, runId: number, asOf: Date, opts: { catalystSourceActive: boolean; keepTop?: number }) {
   const { rows, suspects, weights } = evaluateAll(db, asOf, opts);
+  const keepTop = opts.keepTop ?? 200;
   const ts = nowIso();
   const summary: Record<string, any> = {};
   const removed: any[] = [];
@@ -163,13 +164,14 @@ export function computeAndStoreRankings(db: Db, runId: number, asOf: Date, opts:
       const ranked = hr.filter((r) => r.status === 'ranked').sort((a, b) => (b.score as number) - (a.score as number));
       const prev = previousRanks(db, h, runId);
       const rankOf = new Map(ranked.map((r, i) => [r.tokenId, i + 1]));
-      // On enregistre : classés + insuffisants + suspects (pour l'historique et le biais du survivant).
+      // On enregistre le haut du classement + les tokens qui étaient listés (pour expliquer leur sortie et éviter le biais du survivant).
+      // Les suspects sont marqués dans la table tokens ; les « données insuffisantes » sont comptés dans le résumé.
       for (const r of hr) {
-        if (r.status === 'ineligible' && !prev.map.get(r.tokenId)?.rank) continue;
         const rank = rankOf.get(r.tokenId) ?? null;
         const p = prev.map.get(r.tokenId);
         const listed = rank != null && rank <= LIST_SIZE;
         const wasListed = p?.rank != null && p.rank <= LIST_SIZE;
+        if (!(rank != null && rank <= keepTop) && !wasListed) continue;
         const movement = {
           prevRank: p?.rank ?? null,
           delta: rank != null && p?.rank != null ? p.rank - rank : null,

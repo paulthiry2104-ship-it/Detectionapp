@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "Crypto Radar",
+    "slug": "crypto-radar",
+    "scheme": "cryptoradar",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#07080B",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.pablo.cryptoradar",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.pablo.cryptoradar",
+      "adaptiveIcon": {
+        "backgroundColor": "#07080B",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "output": "single",
+      "name": "Crypto Radar",
+      "shortName": "Radar",
+      "themeColor": "#07080B",
+      "backgroundColor": "#07080B"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "color": "#8B7CFF"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false,
+      "baseUrl": "/Detectionapp"
+    },
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    }
+  }
+}

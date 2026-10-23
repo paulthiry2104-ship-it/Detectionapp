@@ -69,12 +69,12 @@ export async function runDaily(db: Db, trigger: Trigger = 'cron'): Promise<RunOu
     const cat = await ctx.step('9. Catalyseurs à venir', false, () => collectCatalysts(db));
     await ctx.step('10. Tokens disparus', false, () => ({ delisted: markDelisted(db) }));
 
-    const rk = await ctx.step('11. Scores, scénarios et classements', true, () => computeAndStoreRankings(db, ctx.runId, new Date(), { catalystSourceActive: catalystSourceActive() }));
+    const rk = await ctx.step('11. Scores, scénarios et classements', true, () => computeAndStoreRankings(db, ctx.runId, new Date(), { catalystSourceActive: catalystSourceActive(), keepTop: 200 }));
     ctx.stats = { ...ctx.stats, rankings: rk?.summary, evaluated: rk?.evaluated, suspects: rk?.suspects, catalystsActive: cat?.active ?? false };
 
     const newTokenIds = db.all<{ id: string }>('SELECT id FROM tokens WHERE first_seen_at >= ?', since).map((r) => r.id);
     await ctx.step('12. Rapport du jour', true, () => buildDailyReport(db, ctx.runId, new Date(), {
-      newTokenIds, removed: rk?.removed ?? [], providerIssues: providerIssues(ctx.steps).concat(errorsOf(m).map((e: string) => `CoinGecko : ${e}`)), steps: ctx.steps,
+      newTokenIds, removed: rk?.removed ?? [], insufficient: Math.max(0, ...Object.values(rk?.summary ?? {}).map((x: any) => x.insufficient ?? 0)), providerIssues: providerIssues(ctx.steps).concat(errorsOf(m).map((e: string) => `CoinGecko : ${e}`)), steps: ctx.steps,
     }));
     ctx.stats.newTokens = newTokenIds.length;
 
@@ -104,7 +104,7 @@ export async function runRefresh(db: Db, trigger: Trigger = 'cron'): Promise<Run
     const ref = await ctx.step('DEX : volumes et liquidités', false, () => refreshDexTracked(db));
     ctx.dataPoints += ref?.count ?? 0;
     if (ctx.dataPoints === 0) return;
-    const rk = await ctx.step('Re-classement', true, () => computeAndStoreRankings(db, ctx.runId, new Date(), { catalystSourceActive: catalystSourceActive() }));
+    const rk = await ctx.step('Re-classement', true, () => computeAndStoreRankings(db, ctx.runId, new Date(), { catalystSourceActive: catalystSourceActive(), keepTop: 60 }));
     ctx.stats = { rankings: rk?.summary };
     await ctx.step('Alertes', false, () => dispatch(db, [
       ...evaluateMarketRules(db),

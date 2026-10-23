@@ -7,7 +7,7 @@ const tokenLite = (db: Db, id: string) =>
   db.get<any>('SELECT id, symbol, name, chain, logo_url, contract_address, status FROM tokens WHERE id = ?', id) ?? { id, symbol: '?', name: id };
 
 /** Construit et enregistre le « Rapport du jour » d'une exécution quotidienne. */
-export function buildDailyReport(db: Db, runId: number, asOf: Date, extra: { newTokenIds: string[]; removed: any[]; providerIssues: string[]; steps: any[] }) {
+export function buildDailyReport(db: Db, runId: number, asOf: Date, extra: { newTokenIds: string[]; removed: any[]; providerIssues: string[]; steps: any[]; insufficient?: number }) {
   const reportDate = localDate(asOf);
 
   const newProjects = extra.newTokenIds
@@ -70,7 +70,7 @@ export function buildDailyReport(db: Db, runId: number, asOf: Date, extra: { new
     removed: extra.removed.map((r) => ({ ...r, token: tokenLite(db, r.tokenId) })).slice(0, 40),
     multiplierChanges: multiplierChanges.slice(0, 20),
     dataGaps: {
-      insufficientTokens: insufficient,
+      insufficientTokens: extra.insufficient ?? insufficient,
       suspectsDetected: suspects,
       providerIssues: extra.providerIssues,
       failedSteps: extra.steps.filter((s) => !s.ok).map((s) => ({ name: s.name, error: s.error })),

@@ -141,6 +141,9 @@ export type ScoreResult = {
 
 export function eligibleFor(h: Horizon, f: Features, comps: Record<ComponentKey, Component>): string | null {
   if ((f.dataAgeHours ?? 999) > 24) return 'Données de marché de plus de 24 h';
+  // Plancher commun : on écarte les tokens quasi morts (aucun marché réel, capitalisation symbolique).
+  if ((f.volume24h ?? 0) < 10_000) return 'Volume 24 h < 10 k$ : marché trop peu actif';
+  if ((f.marketCap ?? f.fdv ?? 0) < 250_000 && (f.liquidity ?? 0) < 50_000) return 'Capitalisation < 250 k$ sans liquidité suffisante (< 50 k$)';
   if (h === 'week') {
     if ((f.volume24h ?? 0) < 50_000) return 'Volume 24 h < 50 k$ : trop faible pour un signal court terme';
     if (comps.volumeAccel.value == null && comps.onchain.value == null && comps.catalyst.value == null) return 'Aucun signal court terme disponible';

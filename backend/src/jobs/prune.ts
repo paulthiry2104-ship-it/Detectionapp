@@ -24,9 +24,12 @@ export function prune(db: Db, now = new Date()) {
          SELECT t.id FROM tokens t WHERE t.last_seen_at < ? AND NOT EXISTS (SELECT 1 FROM rankings r WHERE r.token_id = t.id AND r.rank IS NOT NULL))`, isoMinus(now, 14),
     ).changes);
     out.rankingsRefresh = Number(db.run(
-      `DELETE FROM rankings WHERE ts < ? AND run_id IN (SELECT id FROM job_runs WHERE job != 'daily')`, d2,
+      `DELETE FROM rankings WHERE ts < ? AND run_id IN (SELECT id FROM job_runs WHERE job != 'daily')`, isoMinus(now, 1),
     ).changes);
-    out.rankingsTail = Number(db.run(`DELETE FROM rankings WHERE ts < ? AND (rank IS NULL OR rank > 100)`, d2).changes);
+    // Anciennes exécutions : on ne garde que le haut du classement (rattrape aussi les bases créées avant cette règle).
+    const lastRun = db.get<{ id: number }>('SELECT MAX(run_id) id FROM rankings')?.id ?? 0;
+    out.rankingsTail = Number(db.run(`DELETE FROM rankings WHERE run_id < ? AND (rank IS NULL OR rank > 200) AND (movement IS NULL OR movement NOT LIKE '%"left":true%')`, lastRun).changes);
+    out.rankingsOld = Number(db.run(`DELETE FROM rankings WHERE ts < ? AND rank > 50`, isoMinus(now, 14)).changes);
     db.run(`UPDATE rankings SET components = '{}' WHERE ts < ? AND components != '{}'`, isoMinus(now, 14));
     db.run(`DELETE FROM category_snapshots WHERE ts < ?`, isoMinus(now, 60));
     db.run(`DELETE FROM category_peers WHERE ts < ?`, isoMinus(now, 10));
