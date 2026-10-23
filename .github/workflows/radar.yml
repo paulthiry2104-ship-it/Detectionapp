@@ -1,0 +1,103 @@
+# Crypto Radar — version gratuite, sans serveur.
+# GitHub lance l'analyse (06 h Paris + actualisation toutes les 3 h), garde la base dans la
+# branche "data" et publie l'app + les données sur GitHub Pages.
+name: Crypto Radar
+on:
+  schedule:
+    - cron: '5 4 * * *'     # 06:05 Paris en heure d'été
+    - cron: '5 5 * * *'     # 06:05 Paris en heure d'hiver (l'autre passage fait une simple actualisation)
+    - cron: '20 */3 * * *'  # actualisation toutes les 3 h
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'auto = analyse du jour si elle manque, sinon actualisation'
+        type: choice
+        options: [auto, daily, refresh, export]
+        default: auto
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: crypto-radar
+  cancel-in-progress: false
+env:
+  TZ_SCHEDULE: Europe/Paris
+  APP_API_KEY: not-used-in-ci
+  INTERNAL_JOB_SECRET: not-used-in-ci-000
+  DATABASE_PATH: data/radar.db
+  COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+  COINMARKETCAL_API_KEY: ${{ secrets.COINMARKETCAL_API_KEY }}
+  LOG_LEVEL: warn
+jobs:
+  analyse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            mobile/package-lock.json
+
+      - name: Récupérer la base (branche data)
+        run: |
+          mkdir -p backend/data
+          if git fetch --depth=1 origin data 2>/dev/null; then
+            git show origin/data:radar.db.gz | gunzip > backend/data/radar.db && echo "Base restaurée ($(du -h backend/data/radar.db | cut -f1))"
+          else
+            echo "Pas encore de base : première exécution."
+          fi
+
+      - name: Analyse
+        id: job
+        working-directory: backend
+        run: |
+          npm ci --no-audit --no-fund
+          MODE="${{ github.event.inputs.mode }}"
+          if [ "${{ github.event_name }}" = "push" ] && [ -f data/radar.db ]; then MODE=export; fi
+          npm run ci -- "${MODE:-auto}" ../site/api
+
+      - name: Sauvegarder la base
+        if: always()
+        run: |
+          test -f backend/data/radar.db || exit 0
+          mkdir -p /tmp/state && gzip -c backend/data/radar.db > /tmp/state/radar.db.gz
+          cd /tmp/state && git init -q && git checkout -q -b data
+          git add radar.db.gz
+          git -c user.name="crypto-radar-bot" -c user.email="bot@users.noreply.github.com" commit -qm "Données du $(date -u +%FT%TZ)"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
+
+      - name: Construire l'app web
+        if: always()
+        working-directory: mobile
+        run: |
+          test -d ../site/api || exit 1
+          npm ci --no-audit --no-fund
+          npx expo export --platform web --output-dir dist
+          cp -r dist/. ../site/
+          cp ../site/index.html ../site/404.html
+          touch ../site/.nojekyll
+
+      - uses: actions/configure-pages@v5
+        if: always()
+      - uses: actions/upload-pages-artifact@v3
+        if: always()
+        with:
+          path: site
+      - id: deploy
+        if: always()
+        uses: actions/deploy-pages@v4
+
+      - name: Résultat
+        if: always()
+        run: |
+          test "${{ steps.job.outcome }}" = "success" || { echo "::error::L'analyse a échoué — l'app affiche l'avertissement et les dernières données."; exit 1; }
