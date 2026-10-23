@@ -3,10 +3,10 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { ago, pct, price, usd } from '../lib/format';
 import { C, S, T } from '../lib/theme';
-import { Badge, Card, TokenLogo } from './ui';
+import { Badge, Card, CopyCA, TokenLogo } from './ui';
 
 export type CardData = {
-  id: string; rank: number | null; symbol: string; name: string; chain: string | null; chainLabel: string | null; logo: string | null;
+  id: string; contract?: string | null; rank: number | null; symbol: string; name: string; chain: string | null; chainLabel: string | null; logo: string | null;
   narrative: string | null; price: number | null; marketCap: number | null; change24h: number | null; change7d: number | null;
   volume24h: number | null; liquidity: number | null; score: number | null; confidence: number; status: string;
   scenario: { display: string; kind: string; label: string; horizon: string } | null; scenarioReason: string | null;
@@ -26,8 +26,9 @@ export function TokenCard({ t, horizon }: { t: CardData; horizon?: string }) {
         <Text style={s.rank}>{t.rank ?? '–'}</Text>
         <TokenLogo uri={t.logo} symbol={t.symbol} />
         <View style={{ flex: 1, marginLeft: S.s }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={T.h3} numberOfLines={1}>{t.symbol}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <Text style={[T.h3, { flexShrink: 0 }]}>{t.symbol}</Text>
+            <CopyCA address={t.contract} />
             {mv?.entered ? <Badge text="NOUVEAU" color={C.ai} bg={C.aiBg} /> : mv?.delta ? <Text style={{ color: mv.delta > 0 ? C.up : C.down, fontSize: 11, fontWeight: '800' }}>{mv.delta > 0 ? '▲' : '▼'}{Math.abs(mv.delta)}</Text> : null}
           </View>
           <Text style={T.tiny} numberOfLines={1}>{t.name} · {t.chainLabel ?? 'multi-chaînes'}{t.narrative ? ` · ${t.narrative}` : ''}</Text>

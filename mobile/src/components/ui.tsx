@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
@@ -177,5 +178,30 @@ export const st = StyleSheet.create({
   seg: { flexDirection: 'row', backgroundColor: C.surface, borderRadius: R.m, padding: 3, borderWidth: StyleSheet.hairlineWidth, borderColor: C.line },
   segItem: { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: 9 },
   segOn: { backgroundColor: C.surface2 },
+  copy: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6, borderWidth: StyleSheet.hairlineWidth, borderColor: C.line, backgroundColor: C.surface2 },
   chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: C.line, backgroundColor: C.surface },
 });
+
+/** Petit bouton « copier le CA » (adresse du contrat). Ne déclenche pas l'ouverture de la fiche. */
+export function CopyCA({ address, compact }: { address?: string | null; compact?: boolean }) {
+  const [done, setDone] = useState(false);
+  if (!address) return null;
+  return (
+    <Pressable
+      hitSlop={8}
+      accessibilityLabel="Copier l’adresse du contrat"
+      onPress={async (e: any) => {
+        e?.stopPropagation?.();
+        e?.preventDefault?.();
+        try { await Clipboard.setStringAsync(address); } catch { /* ignore */ }
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+        setDone(true);
+        setTimeout(() => setDone(false), 1500);
+      }}
+      style={({ pressed }) => [st.copy, done && { backgroundColor: C.upBg, borderColor: C.up }, pressed && { opacity: 0.6 }]}
+    >
+      <Ionicons name={done ? 'checkmark' : 'copy-outline'} size={12} color={done ? C.up : C.sub} />
+      {!compact ? <Text style={{ color: done ? C.up : C.sub, fontSize: 11, fontWeight: '700', marginLeft: 3 }}>{done ? 'Copié' : 'CA'}</Text> : null}
+    </Pressable>
+  );
+}

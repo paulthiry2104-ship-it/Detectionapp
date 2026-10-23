@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { popup } from '../../lib/push';
 import { Screen } from '../../components/Screen';
-import { Badge, Banner, Button, Card, Kind, Loading, Meter, Row, Section, Segmented, SourceLink, Sparkline, TokenLogo } from '../../components/ui';
+import { Badge, Banner, Button, Card, CopyCA, Kind, Loading, Meter, Row, Section, Segmented, SourceLink, Sparkline, TokenLogo } from '../../components/ui';
 import { api, useApi } from '../../lib/api';
 import { ago, date, dateTime, num, pct, price, shortAddr, usd } from '../../lib/format';
 import { C, mono, R, S, T } from '../../lib/theme';
@@ -46,7 +46,7 @@ export default function TokenScreen() {
           <TokenLogo uri={idn.logo} symbol={idn.symbol} size={52} />
           <View style={{ flex: 1 }}>
             <Text style={T.h2}>{idn.name}</Text>
-            <Text style={T.sub}>{idn.symbol} · {idn.chainLabel ?? 'multi-chaînes'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Text style={T.sub}>{idn.symbol} · {idn.chainLabel ?? 'multi-chaînes'}</Text><CopyCA address={idn.contract} /></View>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={[T.h2, { fontVariant: ['tabular-nums'] }]}>{price(m.price)}</Text>

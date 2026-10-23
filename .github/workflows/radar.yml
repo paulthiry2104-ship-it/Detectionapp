@@ -83,6 +83,7 @@ jobs:
           test -d ../site/api || exit 1
           npm ci --no-audit --no-fund
           npx expo export --platform web --output-dir dist
+          node scripts/pwa.mjs dist
           cp -r dist/. ../site/
           cp ../site/index.html ../site/404.html
           touch ../site/.nojekyll

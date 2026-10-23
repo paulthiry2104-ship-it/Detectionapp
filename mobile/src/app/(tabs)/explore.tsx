@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '../../components/Screen';
-import { Badge, Card, Empty, Loading, Segmented, TokenLogo } from '../../components/ui';
+import { Badge, Card, CopyCA, Empty, Loading, Segmented, TokenLogo } from '../../components/ui';
 import { api, useApi } from '../../lib/api';
 import { ago, pct, price, usd } from '../../lib/format';
 import { C, R, S, T } from '../../lib/theme';
@@ -58,6 +58,7 @@ export default function Explore() {
             <View style={{ flex: 1, marginLeft: S.s }}>
               <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
                 <Text style={T.h3}>{t.symbol}</Text>
+                <CopyCA address={t.contract_address} />
                 {t.status === 'suspect' ? <Badge text="suspect" color={C.down} bg={C.downBg} /> : null}
                 {String(t.discovered_via ?? '').includes('boost') ? <Badge text="promo payante" color={C.warn} bg={C.warnBg} /> : null}
               </View>

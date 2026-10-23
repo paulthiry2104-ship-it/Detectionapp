@@ -57,7 +57,7 @@ export function exportStatic(db: Db, outDir: string) {
   for (const sort of ['new', 'volume', 'liquidity', 'gainers'] as const) {
     const order = { new: 't.first_seen_at DESC', volume: 's.volume_24h DESC', liquidity: 's.liquidity_usd DESC', gainers: 's.change_24h DESC' }[sort];
     const items = db.all<any>(
-      `SELECT t.id, t.symbol, t.name, t.chain, t.logo_url, t.status, t.first_seen_at, t.discovered_via, s.price_usd, s.market_cap, s.volume_24h, s.liquidity_usd, s.change_24h, s.ts
+      `SELECT t.id, t.symbol, t.name, t.chain, t.logo_url, t.status, t.contract_address, t.first_seen_at, t.discovered_via, s.price_usd, s.market_cap, s.volume_24h, s.liquidity_usd, s.change_24h, s.ts
        FROM tokens t JOIN market_snapshots s ON s.id = (SELECT id FROM market_snapshots WHERE token_id = t.id ORDER BY ts DESC LIMIT 1)
        WHERE t.status = 'active' AND t.last_seen_at >= ? ORDER BY ${order} NULLS LAST LIMIT 60`, isoMinus(now, 2),
     );
